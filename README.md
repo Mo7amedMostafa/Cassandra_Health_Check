@@ -28,7 +28,7 @@ The script outputs everything live on screen and simultaneously saves the result
 1. Clone this repo (or copy the script):
 
    ```bash
-   git clone [https://github.com/your-username/cassandra-health-check.git](https://github.com/Mo7amedMostafa/Cassandra_Health_Check.git)
+   git clone https://github.com/Mo7amedMostafa/Cassandra_Health_Check.git
    cd cassandra-health-check
    ```
 
