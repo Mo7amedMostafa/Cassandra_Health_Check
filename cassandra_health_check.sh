@@ -9,7 +9,7 @@ CASS_DIR=${CASS_DIR:-"/var/lib/cassandra"}
 
 # Get hostname (this will be part of the filename)
 NODE_HOSTNAME=$(hostname -s)
-OUTPUT_FILE="${NODE_HOSTNAME}.txt"
+OUTPUT_FILE="${NODE_HOSTNAME}_$(date '+%Y-%m-%d_%H:%M').txt"
 
 # Send output to screen + file
 exec > >(tee -a "$OUTPUT_FILE") 2>&1
@@ -23,7 +23,7 @@ NC='\033[0m'
 echo "=========================================="
 echo "Cassandra Cluster Health Check"
 echo "Node: $NODE_HOSTNAME"
-echo "Run time: $(date '+%Y-%m-%d %H:%M:%S')"
+echo "Run time: $(date '+%Y-%m-%d %H:%M')"
 echo "=========================================="
 echo
 
