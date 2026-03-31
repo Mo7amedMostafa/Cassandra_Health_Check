@@ -35,17 +35,17 @@ The script outputs everything live on screen and simultaneously saves the result
 2. Make the script executable:
 
    ```bash
-   chmod +x cassandra_health_and_perf.sh
+   chmod +x cassandra_health_check.sh
    ```
 
 3. Run the script:
 
    ```bash
-   ./cassandra_health_and_perf.sh
+   ./cassandra_health_check.sh
    ```
 
    - You will see the output **live in the terminal**.  
-   - At the same time, everything is saved to a file named like `$(hostname -s)_node.txt` (e.g., `cassandra01_node.txt`).
+   - At the same time, everything is saved to a file named like `$(hostname -s).txt` (e.g., `cassandra01.txt`).
 
 4. (Optional) Run as a specific user that can access Cassandra and system tools:
 
