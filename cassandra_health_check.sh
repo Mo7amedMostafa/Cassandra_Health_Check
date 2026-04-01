@@ -307,7 +307,7 @@ else
     echo "Consider: apt install sysstat  or yum install sysstat"
     echo
 fi
-
+echo
 
 echo "=========================================="
 echo "Health check complete"
