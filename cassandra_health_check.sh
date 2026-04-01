@@ -1,3 +1,6 @@
+# https://github.com/Mo7amedMostafa/Cassandra_Health_Check/tree/main
+# curl -fsSL https://raw.githubusercontent.com/Mo7amedMostafa/Cassandra_Health_Check/refs/heads/main/cassandra_health_check.sh | bash
+
 #!/bin/bash
 # Cassandra cluster health check script (run on each node)
 #set -euo pipefail
@@ -30,34 +33,54 @@ echo
 # 1. Cluster status
 echo "1. Cluster Status (nodetool status)"
 echo "-----------------------------------"
+echo "Explanation: Checks if all nodes are UP (UN) and in Normal state; any DN or multiple schema versions can indicate ring or node issues."
+echo "------------------"
+echo
+echo 
 "$NODETOOL" status
 echo
 
 # 2. Ring / token distribution
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "2. Token Ring Distribution"
 echo "--------------------------"
+echo "Explanation: Shows how data is distributed across nodes via tokens; uneven distribution can cause hotspots."
+echo "------------------"
+echo
+echo  
 "$NODETOOL" ring 
 echo
 
 # 3. Gossip info (load, schema, status)
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "3. Gossip Information"
 echo "---------------------"
+echo "Explanation: Displays gossip‑based status, load, and schema versions; inconsistency here can mean node communication or schema problems."
+echo "------------------"
+echo
+echo 
 "$NODETOOL" gossipinfo | grep -E "(STATUS|LOAD|SCHEMA)"
 echo
 
 # 4. Thread pool stats
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "4. Thread Pool Statistics"
 echo "-------------------------"
+echo "Explanation: Reports active/pending/blocked tasks; high pending or blocked counts indicate overload or GC pressure."
+echo "------------------"
+echo
+echo  
 "$NODETOOL" tpstats | grep -E "(Pool Name|Active|Pending|Blocked)" 
 echo
 
 # 5. Dropped messages (overload indicator)
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "5. Dropped Messages"
 echo "--------------------"
+echo "Explanation: Counts dropped messages in thread pools; any non‑zero value is a sign of overload or timeouts."
+echo "------------------"
+echo
+echo  
 dropped=$("$NODETOOL" tpstats | grep -E "(MUTATION|READ|COUNTER)" | awk '{sum += $5} END {print sum+0}')
 if [ "$dropped" -gt 0 ]; then
 echo -e "${RED}WARNING: $dropped dropped messages detected${NC}"
@@ -67,16 +90,24 @@ fi
 echo
 
 # 6. Compaction stats
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "6. Compaction Statistics"
 echo "------------------------"
+echo "Explanation: Shows pending compactions and their impact on disk and CPU; high pending count can degrade performance."
+echo "------------------"
+echo
+echo  
 "$NODETOOL" compactionstats
 echo
 
 # 7. Schema agreement
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "7. Schema Agreement"
 echo "-------------------"
+echo "Explanation: Verifies that all nodes agree on the same schema version; disagreement can cause query or replication issues."
+echo "------------------"
+echo
+echo  
 schema_lines=$("$NODETOOL" describecluster | grep -A 100 "Schema versions:" | grep -c "\[" || echo 0)
 if [ "$schema_lines" -eq 1 ]; then
     echo -e "${GREEN}OK: All nodes agree on schema${NC}"
@@ -87,16 +118,24 @@ fi
 echo
 
 # 8. Node info (load, heap, uptime)
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "8. Node Info (Load, Heap, Uptime)"
 echo "----------------------------------"
+echo "Explanation: Checks node‑level load, heap usage, and uptime; high load or low heap can indicate resource pressure."
+echo "------------------"
+echo
+echo  
 "$NODETOOL" info | grep -E "(Load|ID|Gossip|Load|Uptime|Heap|Off)"
 echo
 
 # 9. Quick CQL connectivity
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "9. CQL Connectivity Test"
 echo "------------------------"
+echo "Explanation: Tests if CQL can connect to this node; failure here blocks application queries."
+echo "------------------"
+echo
+echo  
 if "$CQLSH" -e "SELECT cluster_name FROM system.local;" > /dev/null 2>&1; then
     echo -e "${GREEN}OK: CQL connection successful${NC}"
 else
@@ -105,9 +144,13 @@ fi
 echo
 
 # 10. Disk usage
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "10. Disk Usage (Cassandra data dir)"
 echo "------------------------------------"
+echo "Explanation: Checks disk space on the data directory; running out of space can cause node failure."
+echo "------------------"
+echo
+echo  
 if [ -d "$CASS_DIR" ]; then
     df -h "$CASS_DIR"
 else
@@ -116,9 +159,13 @@ fi
 echo
 
 # 11. Recent log errors/warnings
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "11. Recent log errors and warnings (last 100 lines)"
 echo "---------------------------------------------------"
+echo "Explanation: Scans recent log lines for critical issues (errors, GC, dropped messages) to catch transient problems."
+echo "------------------"
+echo
+echo  
 if [ -r "$LOG_DIR/system.log" ]; then
     # Capture last 100 lines matching keywords, then take last 20
     output=$(tail -100 "$LOG_DIR/system.log" | grep -i -E "(error|warn|exception|dropped|gc)" | tail -20)
@@ -134,10 +181,13 @@ fi
 echo
 
 # 12. Performance metrics: latency and throughput
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "12. Performance Metrics (Latency & Throughput)"
 echo "---------------------------------------------"
-
+echo "Explanation: Reports latency distributions and read/write rates per‑node and per‑table; spikes indicate performance degradation."
+echo "------------------"
+echo
+echo  
 echo "Proxy histograms (network operations, last ~5 min):"
 echo "---------------------------------------------------"
 "$NODETOOL" proxyhistograms
@@ -164,16 +214,22 @@ for keyspace in $($CQLSH -e "DESC KEYSPACES;" | tr ' ' '\n' | grep -v "^$" | gre
 done
 
 # 13. GC pauses
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "13. GC STATISTICS:"
 echo "-------------------"
+echo "Explanation: Shows garbage collection behavior; long GC pauses can cause timeouts and dropped requests."
+echo "------------------"
+echo
+echo 
 "$NODETOOL" gcstats 
 echo
 
 # 16. Repair Status (Percent Repaired, user keyspaces only)
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "14. Repair Status (Percent Repaired – user keyspaces)"
 echo "-----------------------------------------------------"
+echo "Explanation: Checks what percentage of data per table has been repaired; low values may indicate need for repair operations."
+echo 
 echo
 # List all keyspaces (exclude system*, reaper_db, etc.)
 for keyspace in $($CQLSH -e "DESC KEYSPACES;" | tr ' ' '\n' | grep -v "^$" | grep -E -v "^(system|system_.*|users_db)$"); do
@@ -188,10 +244,12 @@ for keyspace in $($CQLSH -e "DESC KEYSPACES;" | tr ' ' '\n' | grep -v "^$" | gre
 done
 
 # 14. Node system health (CPU, memory, load, disk)
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "15. Node System Health (CPU, Memory, Load, Disk)"
 echo "-------------------------------------------------"
-
+echo "Explanation: Monitors OS‑level health (CPU, memory, disk usage); poor node health can severely hurt Cassandra performance."
+echo
+echo  
 echo "Uptime:"
 echo "-------"
 uptime
@@ -233,9 +291,11 @@ ps aux --sort=-%mem | head -6 | awk 'NR==1{print; next} {printf "%-10s %-6s %-5s
 echo
 
 # 15. Disk I/O statistics
-echo "-------------------------------------------------------------"
+echo "============================================================="
 echo "16. Disk I/O Statistics"
 echo "------------------------"
+echo "Explanation: Shows disk throughput, IOPS, and utilization; high utilization or long wait times can bottleneck Cassandra."
+echo 
 
 if command -v iostat >/dev/null 2>&1; then
     echo "Disk I/O stats (all devices, one snapshot):"
@@ -246,7 +306,7 @@ else
     echo "iostat not found (usually in 'sysstat' package)."
     echo "Consider: apt install sysstat  or yum install sysstat"
     echo
-    fi
+fi
 
 
 echo "=========================================="
